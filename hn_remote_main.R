@@ -172,3 +172,4 @@ plt2 <- ggplot(pivot_longer(extracted_df, c(n_posts, n_remote), names_to = 'key'
     theme(legend.position = "top")
 plot(plt2)
 ggsave('/tmp/plt2.png', dpi = 100)
+
