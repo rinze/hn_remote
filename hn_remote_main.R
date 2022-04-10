@@ -10,8 +10,17 @@ log_threshold(DEBUG)
 
 INITIAL_URL <- 'https://news.ycombinator.com/submitted?id=whoishiring'
 HN_URL <- 'https://news.ycombinator.com'
-START_DATE <- '2017-01-01'
-END_DATE <- '2021-10-01'
+START_DATE <- '2019-01-01'
+END_DATE <- '2022-03-01'
+CRAWL_DELAY <- 30 # according to https://news.ycombinator.com/robots.txt
+USER_AGENT <- 'https://rinzewind.org; remote-work-parser'
+
+httr::set_config(httr::user_agent(USER_AGENT))
+
+local_read_html <- function(url, delay = CRAWL_DELAY, ...) {
+    Sys.sleep(delay)
+    return(read_html(url, ...))
+}
 
 has_more <- function(parsed_html) {
     # Checks if there's a "More" link at the bottom of the page. If so,
@@ -29,9 +38,10 @@ find_links <- function(start_date, end_date) {
     keep_reading <- TRUE
     url <- INITIAL_URL
     result <- data.frame()
+    my_session <- session(url)
     while (keep_reading) {
         log_info("Parsing {url}")
-        parsed_html <- read_html(url)
+        parsed_html <- local_read_html(my_session)
         parsed_post_df <- parse_post_list(parsed_html, start_date, end_date)
         result <- rbind(result, parsed_post_df)
         # Do we have all dates we want?
@@ -43,7 +53,7 @@ find_links <- function(start_date, end_date) {
         } else {
             hm <- has_more(parsed_html)
             if (hm$has_more) {
-                url <- hm$next_page
+                my_session <- session_jump_to(my_session, hm$next_page)
             } else {
                 log_warnings("Only have data between {min_date} and {max_date}, but reached the end of the post list")
                 keep_reading <- FALSE
@@ -105,7 +115,7 @@ parse_post <- function(url) {
     n_remote <- 0
     n_page <- 1
     while (keep_reading) {
-        parsed_html <- read_html(url)
+        parsed_html <- local_read_html(url)
         page_result <- parse_post_page(parsed_html)
         log_debug("\tParsed page {n_page}, got {page_result$n_posts} posts, {page_result$n_remote} remote")
         n_posts <- n_posts + page_result$n_posts
