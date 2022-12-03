@@ -10,8 +10,8 @@ log_threshold(DEBUG)
 
 INITIAL_URL <- 'https://news.ycombinator.com/submitted?id=whoishiring'
 HN_URL <- 'https://news.ycombinator.com'
-START_DATE <- '2019-01-01'
-END_DATE <- '2022-03-01'
+START_DATE <- '2019-06-01'
+END_DATE <- '2022-12-01'
 CRAWL_DELAY <- 30 # according to https://news.ycombinator.com/robots.txt
 USER_AGENT <- 'https://rinzewind.org; remote-work-parser'
 
@@ -76,8 +76,11 @@ parse_date_from_title <- function(title) {
 parse_post_list <- function(parsed_html, start_date, end_date) {
     # Get's "Who's hiring?" posts from the post list, along with the URL and the date.
     
-    link_list <- file.path(HN_URL, parsed_html %>% html_elements(".titlelink") %>% html_attr("href"))
-    title_list <- parsed_html %>% html_elements(".titlelink") %>% html_text()
+    link_list <- file.path(HN_URL, parsed_html %>% 
+            html_elements(".titleline") %>% 
+            html_elements("a") %>%
+            html_attr("href"))
+    title_list <- parsed_html %>% html_elements(".titleline") %>% html_text()
     dd <- data.frame(link = link_list, title = title_list)
     
     # Get only hiring posts
